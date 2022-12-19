@@ -1,0 +1,30 @@
+// Calculate integral of given input vector
+// $o1: input vector.
+// $2: baseline membrane potential
+// $3: startindex
+// $4: endindex	
+
+func get_integral(){local ii, integral
+	integral = 0
+	for ii=$3,$4 {integral= $o1.x[ii]-$2+integral}
+	return integral
+}
+
+// Find maximum of a given input vector
+// $o1: input vector.
+// $2: startindex
+// $3: endindex	
+func get_max(){local ii, max
+	max = $o1.x[$2]
+	for ii=$2,$3 {
+        if ($o1.x[ii]>max) {max=$o1.x[ii]}
+    }
+	return max
+}
+
+// Determine total area of currently selected sections
+func secArea() {local totalArea
+    totalArea=0
+    for (x) totalArea+= area(x)
+    return totalArea
+}

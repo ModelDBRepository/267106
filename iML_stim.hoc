@@ -1,0 +1,111 @@
+// Number of glutamatergic and GABAergic synapses
+// 
+n_glu_syn=3*ndend*(2*2*2+1) 
+//Attention: each anatomic GABAergic synapse is modeled by two netcons: 
+// one linear connection + one voltage-dependent representing different receptors 
+n_GABA_syn=3*2*ndend*(2*2*2+1)   
+// synaptic inputs
+objref nsGABA[n_GABA_syn],ncGABA[n_GABA_syn],synGABA[n_GABA_syn]
+objref nsAMPA[n_glu_syn],ncAMPA[n_glu_syn],synAMPA[n_glu_syn]
+objref nsNMDA[n_glu_syn],ncNMDA[n_glu_syn],synNMDA[n_glu_syn]
+objref locations_glu, locations_gaba, dendrite_ID 
+
+// insert Glu and GABA synapses
+//x=0.5
+locations_glu = new Vector()
+locations_gaba = new Vector()
+dendrite_ID= new SectionList()
+
+forsec middleDen{
+    locations_glu.append(0.45)
+    locations_gaba.append(0.15)
+    dendrite_ID.append()
+    }
+forsec distalDen{
+    locations_glu.append(0.7)
+    locations_gaba.append(0.4)
+    dendrite_ID.append()
+    }
+forsec proxDen{
+    locations_glu.append(0.85)
+    locations_gaba.append(0.55)
+    dendrite_ID.append()
+    }
+forsec middleDen{
+    locations_glu.append(0.85)
+    locations_gaba.append(0.55)
+    dendrite_ID.append()
+    }
+forsec middleDen{
+    locations_glu.append(0.45)
+    locations_gaba.append(0.15)
+    dendrite_ID.append()
+    }
+forsec distalDen{
+    locations_glu.append(0.7)
+    locations_gaba.append(0.4)
+    dendrite_ID.append()
+    }
+forsec proxDen{
+    locations_glu.append(0.85)
+    locations_gaba.append(0.55)
+    dendrite_ID.append()
+    }
+forsec middleDen{
+    locations_glu.append(0.85)
+    locations_gaba.append(0.55)
+    dendrite_ID.append()
+    }
+forsec middleDen{
+    locations_glu.append(0.45)
+    locations_gaba.append(0.15)
+    dendrite_ID.append()
+    }
+forsec distalDen{
+    locations_glu.append(0.7)
+    locations_gaba.append(0.4)
+    dendrite_ID.append()
+    }
+forsec proxDen{
+    locations_glu.append(0.85)
+    locations_gaba.append(0.55)
+    dendrite_ID.append()
+    }
+forsec middleDen{
+    locations_glu.append(0.85)
+    locations_gaba.append(0.55)
+    dendrite_ID.append()
+    }
+//for (ii=0; ii<n_glu_syn; ii=ii+1){
+ii=0
+forsec dendrite_ID{
+    //access dendrite_ID.x[ii]
+    synAMPA[ii] = new excSyn(locations_glu.x[ii])
+    //dend synAMPA[ii] = new excSyn(x)
+    synAMPA[ii].isOn=0
+    nsAMPA[ii] = new NetStim()
+    ncAMPA[ii] = new NetCon(nsAMPA[ii], synAMPA[ii])
+
+    synNMDA[ii] = new Exp2SynNmda(locations_glu.x[ii])
+    //dend synNMDA[ii] = new Exp2SynNmda(x)
+    synNMDA[ii].isOn=0
+    nsNMDA[ii] = new NetStim()
+    ncNMDA[ii] = new NetCon(nsNMDA[ii], synNMDA[ii])
+    ii+=1
+}
+
+//x=0.5
+//for (ii=1; ii<2*n_GABA_syn+1; ii=ii+1){
+ii=1
+forsec dendrite_ID{
+    //access dendrite_ID.x[ii-1]
+    synGABA[ii*2-2] = new inhSyn(locations_gaba.x[ii-1])
+    synGABA[ii*2-2].isOn=0
+    nsGABA[ii*2-2] = new NetStim()
+    ncGABA[ii*2-2] = new NetCon(nsGABA[ii*2-2], synGABA[ii*2-2])
+    synGABA[ii*2-1] = new inhSyn(locations_gaba.x[ii-1])
+    synGABA[ii*2-1].isOn=0
+    nsGABA[ii*2-1] = new NetStim()
+    ncGABA[ii*2-1] = new NetCon(nsGABA[ii*2-1], synGABA[ii*2-1])
+    ii+=1
+}

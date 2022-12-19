@@ -1,0 +1,29 @@
+//******   membrane properties ************************************
+// Passive parameters from Heigele et al. 2016, Nature Neuroscience 19:263-70
+//
+celsius = 35
+global_ra=200.00		// 200 Ohm cm 
+Cm= 1                   // specific membrane capacitance in uF/cm^2 
+Vleak=-80               // mV
+Vrest=-80	            //mV
+Rin = 4 		        // GOhm
+
+proc PassiveMembrane(){				    // Rin: 4 GOhm
+ Gin 	= 1/Rin  				        // Gin: 0.25 nS  
+ Decay	= 186 - 173*exp(-0.2183/Gin)	// membrane tau: 114 ms
+ Cap 	= Decay * Gin			        // Capacitance: 28.56 pF
+ Rm	= 1000 * Decay			            // Rmem: 114000 Ohm cm^2
+}
+PassiveMembrane()
+
+ndend=4
+load_file("GC-Ball.hoc")
+
+forall{    
+    insert pas	
+    e_pas=Vleak  
+    g_pas=1/Rm   
+    Ra=global_ra  
+    cm=Cm
+    v_init = -80
+    }

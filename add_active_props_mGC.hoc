@@ -1,0 +1,16 @@
+load_file("insert_channels.hoc")
+// Model parameters
+NaV_density=288 // in (mS/cm2)
+vShift_NaV=24
+vShift_NaV_ais=vShift_NaV
+rate_scale_NaV=1 
+
+kdr_density = 0.004 //in (S/cm2)
+kdr_p_t_ratio=100
+nf_soma=0.2      //down-scaling of NaV and Kdr in soma, dend and axon
+nf_dend=nf_soma*0.01
+nf_ax=0.4
+
+insert_Nav_mature(NaV_density, nf_ax*NaV_density, nf_soma*NaV_density, nf_dend*NaV_density, vShift_NaV, vShift_NaV_ais, rate_scale_NaV)
+insert_Kdr(kdr_density,nf_ax*kdr_density,nf_soma*kdr_density,nf_dend*kdr_density, kdr_p_t_ratio) 
+   

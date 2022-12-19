@@ -1,0 +1,52 @@
+//******   membrane properties ************************************
+// Passive parameters from Heigele et al. 2016, Nature Neuroscience 19:263-70
+//
+celsius = 35
+global_ra=200.00		            //Ohm cm 
+spine_fact= 1.5                     // to compensate for addional membrane area by spines
+Cm= 1                               // specific membrane capacitance in uF/cm^2 
+Vleak=-80                           // mV
+Vrest=-80	        
+Rin_target = 0.1735                 // GOhm
+Rin = Rin_target*spine_fact
+
+proc PassiveMembrane(){				
+ Gin 	= 1/Rin  				    // Gin: 5.0 nS  
+ Decay	= 25	                    // membrane tau: 25 ms
+ Cap 	= Decay * Gin	            // Capacitance: 125 pF
+ Rm	= 1000 * Decay 		            // Rmem: 25000 Ohm cm^2
+}
+
+PassiveMembrane()
+
+ndend=6
+load_file("GC-Ball.hoc")
+
+forall {
+    insert pas	
+    e_pas=Vleak
+    Ra=global_ra 
+    v_init = -80    
+    }
+    
+forsec "dendrite"{          
+    g_pas=spine_fact/Rm   
+    cm=Cm*spine_fact
+    }
+
+
+// specific membrane reistivity and capacitance for absence of spines 
+forsec "soma"{    
+    g_pas=1/Rm
+    cm=Cm
+    }
+    
+forsec "axon"{     
+    g_pas=1/Rm
+    cm=Cm
+    }
+    
+forsec "AIS"{      
+    g_pas=1/Rm
+    cm=Cm
+    }

@@ -1,0 +1,55 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+// Jan M Schulz
+// University of Basel
+// June, 2020
+//
+// Correspondence: j.schulz@unibas.ch
+//
+////////////////////////////////////////////////////////////////////////////////
+
+// LOAD GUI.
+load_file("nrngui.hoc")
+
+{
+	load_file("nrngui.hoc")
+}
+
+// CHOOSE SIMULATION
+// SET FIGURE AND WHETHER GABA IS LINEAR OR NONLINEAR
+// FIG OPTIONS: 1= Figure 5 YOUNG GC
+// FIG OPTIONS: 2= Figure 7 YOUNG GC
+// FIG OPTIONS: 3= Figure 7 MATURE GC
+// GABA OPTIONS: 1= NONLINEAR; 2= LINEAR GABA
+Fig_option=3
+GABA_option=2
+
+// LOAD NEURON. 
+//For mature granule cell set mature=1
+//For young granule cell set mature=0
+mature=0
+if (Fig_option==3) {mature=1}
+
+{
+	load_file("Calc_func.hoc")
+    if (mature == 1){
+        load_file("design_mGC.hoc")
+        if (Fig_option>1) {load_file("add_active_props_mGC.hoc")}
+    } 
+    if (mature == 0) {
+        load_file("design_yGC.hoc")
+        if (Fig_option>1) {load_file("add_active_props.hoc")}
+    }
+}
+
+// INSERT SYNAPSES.
+{
+	load_file("iML_stim.hoc")
+}
+
+// START STIMULATION
+{
+    if (Fig_option==1) {load_file("IO_burst_PSP.hoc")}
+	if (Fig_option==2) {load_file("IO_burst_PSP_AP_output.hoc")}
+	if (Fig_option==3) {load_file("IO_burst_PSP_AP_output_m.hoc")}
+}

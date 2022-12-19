@@ -1,0 +1,45 @@
+// insert GC channels
+proc insert_Nav() {local gbar_Na_axon, gbar_Na_ais, gbar_Na_soma, gbar_Na_dend 
+  gbar_Na_axon = $2
+  gbar_Na_ais = $1
+  gbar_Na_soma = $3
+  gbar_Na_dend = $4
+  forall {insert na8st gbar_na8st=0 vShift_na8st=$5 kinfact_na8st=$6 ena=60}
+  forsec "soma" {gbar_na8st= gbar_Na_soma } 
+  forsec "dendrite" {gbar_na8st= gbar_Na_dend}	
+  if (axonGC) {
+	AIS			{gbar_na8st= gbar_Na_ais }  	
+	axon		{gbar_na8st= gbar_Na_axon}  	
+  }
+}
+
+proc insert_Nav_mature() {local gbar_Na_axon, gbar_Na_ais, gbar_Na_soma, gbar_Na_dend 
+  gbar_Na_axon = $2
+  gbar_Na_ais = $1
+  gbar_Na_soma = $3
+  gbar_Na_dend = $4
+  forsec "soma" {insert na8st gbar_na8st= gbar_Na_soma vShift_na8st=$5 kinfact_na8st=$7 ena=60}
+  forsec "dendrite" {insert na8st gbar_na8st= gbar_Na_dend vShift_na8st=$5 kinfact_na8st=$7 ena=60}	
+  if (axonGC) {
+	AIS			{insert na8stX gbar_na8stX= gbar_Na_ais vShiftX_na8stX=$6 kinfact_na8stX=$7 ena=60}  	
+	axon		{insert na8stX gbar_na8stX= gbar_Na_axon vShiftX_na8stX=$5 kinfact_na8stX=$7 ena=60}  	
+  }
+}
+
+proc insert_Kdr() {local gbar_Kdr_axon, gbar_Kdr_ais, gbar_Kdr_soma, gbar_Kdr_dend 
+  gbar_Kdr_axon = $2
+  gbar_Kdr_ais = $1
+  gbar_Kdr_soma = $3
+  gbar_Kdr_dend = $4
+  
+  forall {insert K_Tst gK_Tstbar_K_Tst=0 ek=-90}
+  forall {insert K_Pst gK_Pstbar_K_Pst=0}
+
+  forsec "soma" {gK_Tstbar_K_Tst = gbar_Kdr_soma  gK_Pstbar_K_Pst = gbar_Kdr_soma*$5} 
+  forsec "dendrite" {gK_Tstbar_K_Tst = gbar_Kdr_dend  gK_Pstbar_K_Pst = gbar_Kdr_dend*$5}	
+  if (axonGC) {
+	AIS			{gK_Tstbar_K_Tst = gbar_Kdr_ais gK_Pstbar_K_Pst = gbar_Kdr_ais*$5}  	
+	axon		{gK_Tstbar_K_Tst = gbar_Kdr_axon gK_Pstbar_K_Pst = gbar_Kdr_axon*$5}  	
+  }
+}
+

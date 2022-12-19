@@ -1,0 +1,245 @@
+// GENERATE A FAMILY OF BURST PSPS DEPENDING ON E-I RATIO
+//	MEASURE THE CONTRIBUTION OF NMDA RECEPTORS TO THE DEPOLARIZATION
+// JM Schulz, 2020
+
+strdef ColLabel, file_name1, file_name2
+objref total_integral, NMDA_integral, glu_Syn_number, GABA_Syn_number, shapeSyn
+//save output in python vectors
+nrnpython("import numpy as N")
+nrnpython("import matplotlib.pyplot as plt")
+nrnpython("from mpl_toolkits import mplot3d")
+
+objref p
+p = new PythonObject()
+nrnpython("integral_ctrl=N.zeros((0,))")
+nrnpython("integral_NMDA=N.zeros((0,))")
+nrnpython("Peak_PSP=N.zeros((0,))")
+nrnpython("X=N.zeros((0,))")
+nrnpython("Y=N.zeros((0,))")
+nrnpython("Arr_integral_ctrl=N.zeros((36,26))")
+nrnpython("Arr_Peak_PSP=N.zeros((36,26))")
+nrnpython("Arr_X=N.zeros((36,26))")
+nrnpython("Arr_Y=N.zeros((36,26))")
+nrnpython("Arr_integral_NMDA=N.zeros((16,26))")
+nrnpython("Arr_X_NMDA=N.zeros((16,26))")
+nrnpython("Arr_Y_NMDA=N.zeros((16,26))")
+nrnpython("X_NMDA=N.zeros((0,))")
+nrnpython("Y_NMDA=N.zeros((0,))")
+nrnpython("x=0")
+nrnpython("y=0")
+nrnpython("peak_depolarization=0")
+nrnpython("NMDA_area=0")
+
+
+load_file("Calc_Func.hoc")
+
+// Numerical parameters for simulation.
+tstop = 350 // stop time of simulation
+stimStart=20
+dtime=0.2
+gluSyn_iter=36
+GabaSyn_iter=26
+
+// GABA reversal
+inhRev = -35
+
+ampaWeight=0.00002 // 0.00002 = 1/7 of mature synapse in CA1 (Schulz et al. 2018); Li et al., 2017: 2 pA = 0.025 nS
+nmdaWeight=7*ampaWeight // Li et al., 2017
+GABAweight_total=0.00024
+
+alpha_vspom=-0.062
+v0_block=10
+
+//synGABA[0] is not rectifying, synGABA[1] is rectifying
+GABAweight0= GABAweight_total/5 
+GABAweight1= 4*GABAweight_total/5  
+GABAtau2=55
+GABAtau1=3
+
+shapeSyn = new Shape()
+shapeSyn.label("Syn")
+
+for (ii=0; ii<n_GABA_syn; ii=ii+2){
+    synGABA[ii].tau1= 0.5
+    synGABA[ii].tau2 = 10 
+    ncGABA[ii].weight = GABAweight0 
+    synGABA[ii].slope_factor=0.3
+    synGABA[ii].V50=-150
+    shapeSyn.point_mark(synGABA[ii],3,"O",6)
+
+    synGABA[ii+1].tau1= GABAtau1
+    synGABA[ii+1].tau2 = GABAtau2
+    ncGABA[ii+1].weight = GABAweight1
+	if (GABA_option==1) {synGABA[ii+1].slope_factor=7    //Analysis of VC data in Schulz et al., 2019
+    synGABA[ii+1].V50=  -45}
+	if (GABA_option==2) {synGABA[ii+1].slope_factor=0.3 
+    synGABA[ii+1].V50=  250}
+}
+
+for (ii=0; ii<n_glu_syn; ii=ii+1){
+    ncAMPA[ii].weight = ampaWeight
+    ncNMDA[ii].weight = nmdaWeight
+    nsAMPA[ii].number = 3
+    nsAMPA[ii].start = stimStart
+    nsNMDA[ii].number = 3
+    nsNMDA[ii].start = stimStart
+    shapeSyn.point_mark(synAMPA[ii],2,"O",6)
+}
+
+//shapeSyn.flush()
+
+//setup recording vectors
+objref recv, rect, reci_NMDA
+recv = new Vector()
+rect = new Vector()
+reci_NMDA = new Vector()
+total_integral= new Matrix(gluSyn_iter,GabaSyn_iter)
+NMDA_integral= new Matrix(gluSyn_iter,GabaSyn_iter)
+glu_Syn_number = new Vector(gluSyn_iter*GabaSyn_iter)
+GABA_Syn_number = new Vector(gluSyn_iter*GabaSyn_iter)
+
+access soma[1]
+recv.record(&soma[1].v(0.5),dtime)
+rect.record(&t)
+reci_NMDA.record(&synNMDA[0].i,dtime)
+
+// Create graphs for visualisation.
+objref Inh_intact, Inh_intact_15
+
+Inh_intact = new Graph() 
+Inh_intact.label("Ctrl, 3 GABA syn")
+Inh_intact.addvar("soma[1].v(0.5)",2,1)
+Inh_intact.exec_menu("Keep Lines")
+Inh_intact.size(0,tstop,-85,-15)
+
+Inh_intact_15 = new Graph() 
+Inh_intact_15.label("Ctrl, 15 GABA syn")
+Inh_intact_15.addvar("soma[1].v(0.5)",2,1)
+Inh_intact_15.exec_menu("Keep Lines")
+Inh_intact_15.size(0,tstop,-85,-15)
+
+// Adjust GABA synapse dynamics
+for (ii=0; ii<n_GABA_syn; ii=ii+1){
+    synGABA[ii].isOn=0
+    synGABA[ii].e = inhRev
+
+    nsGABA[ii].interval = 20
+    nsGABA[ii].number = 3
+    nsGABA[ii].start = stimStart
+    nsGABA[ii].noise = 0
+    ncGABA[ii].delay = 0
+}
+
+for (ii=0; ii<n_glu_syn; ii=ii+1){
+    synAMPA[ii].isOn=0
+    synNMDA[ii].isOn=0
+    synAMPA[ii].tau1= 0.2  // Jarsky et al., 2005
+    synAMPA[ii].tau2 = 2 // Jarsky et al., 2005
+
+    nsAMPA[ii].interval = 20
+    nsAMPA[ii].noise = 0
+    ncAMPA[ii].delay = 0
+
+    synNMDA[ii].tau1= 3  
+    synNMDA[ii].tau2 = 35
+    
+    nsNMDA[ii].interval = 20
+    nsNMDA[ii].noise = 0
+    ncNMDA[ii].delay = 0
+    synNMDA[ii].alpha_vspom=alpha_vspom
+    synNMDA[ii].v0_block=v0_block
+}
+// turn off cvode variable time step in order to avoid errors during repetitive simulations
+cvode_active(1)
+
+simul_no=0    
+// run simulation for different current steps
+for(gg=0; gg<GabaSyn_iter; gg=gg+1){
+    print gg    
+    //ncGABA[0].weight = gg*GABAweight0  
+    //ncGABA[1].weight = gg*GABAweight1
+    if(gg>0){
+        synGABA[2*(gg-1)].isOn=1
+        synGABA[2*(gg-1)+1].isOn=1
+    }
+    for(jj=0; jj<gluSyn_iter-1; jj=jj+1){
+        synAMPA[jj].isOn=0
+        synNMDA[jj].isOn=0
+    }
+    for(jj=0; jj<gluSyn_iter; jj=jj+1){
+        print jj
+        if(jj>0){
+            synAMPA[jj-1].isOn=1
+            synNMDA[jj-1].isOn=1
+        }        
+        
+        if (gg==3 && jj<22 && jj%2==1){curGr = graphList[0].append(Inh_intact)}
+        if (gg==15 && jj<22 && jj%2==1){curGr = graphList[0].append(Inh_intact_15)}
+        finitialize()
+        run()
+        if (gg==3 && jj<22 && jj%2==1){graphList[0].remove(curGr-1)}
+        if (gg==15 && jj<22 && jj%2==1){graphList[0].remove(curGr-1)}
+        
+        glu_Syn_number.x[simul_no]=jj
+        GABA_Syn_number.x[simul_no]=gg
+        total_integral.x[jj][gg]=dtime*get_integral(recv,-80,int(stimStart/dtime),int(tstop/dtime)-1)
+        p.x=jj
+        p.y=gg
+        p.peak_depolarization=get_max(recv,int(30/dtime),int(300/dtime)-1)
+        nrnpython("Arr_Peak_PSP[int(x),int(y)]=peak_depolarization")
+        nrnpython("Peak_PSP=N.append(Peak_PSP,peak_depolarization)")
+        nrnpython("X=N.append(X,x)")
+        nrnpython("Y=N.append(Y,y)")
+		nrnpython("Arr_X[int(x),int(y)]=x")
+        
+        //AMPA only 
+        for (ii=0; ii<n_glu_syn; ii=ii+1){
+            synNMDA[ii].isOn=0
+        }
+        finitialize()
+        run()
+		
+        NMDA_integral.x[jj][gg]=total_integral.x[jj][gg]-dtime*get_integral(recv,-80,int(stimStart/dtime),int(tstop/dtime)-1)
+        
+        if (jj>4 && jj<21 && gg<26){
+            p.NMDA_area=NMDA_integral.x[jj][gg]
+            nrnpython("integral_NMDA=N.append(integral_NMDA,NMDA_area)")
+            nrnpython("Arr_integral_NMDA[int(x-5),int(y)]=NMDA_area")
+            nrnpython("X_NMDA=N.append(X_NMDA,x)")
+            nrnpython("Y_NMDA=N.append(Y_NMDA,y)")
+            nrnpython("Arr_X_NMDA[int(x-5),int(y)]=x")
+            nrnpython("Arr_Y_NMDA[int(x-5),int(y)]=y")        
+        }
+        
+        //plus NMDA: control 
+        for (ii=0; ii<jj; ii=ii+1){
+            synNMDA[ii].isOn=1
+        }
+        simul_no=simul_no+1
+    }       
+}
+print "simulation is done"
+
+nrnpython("fig1 = plt.figure()")
+nrnpython("ax = plt.axes(projection='3d')")
+nrnpython("ax.plot_surface(Arr_X_NMDA, Arr_Y_NMDA, Arr_integral_NMDA, rstride=1, cstride=1, cmap='jet', edgecolor='none')")
+nrnpython("ax.scatter(X_NMDA,Y_NMDA, integral_NMDA)")
+nrnpython("ax.set_xlim([21,4])")
+nrnpython("ax.set_ylim([-1,26])")
+nrnpython("ax.set_zlim([-1000,4500])")
+nrnpython("ax.set_xlabel('# Glu synapses')")
+nrnpython("ax.set_ylabel('# GABA synapses')")
+nrnpython("ax.set_zlabel('NMDAR-integral (mV*ms)')")
+
+nrnpython("fig2 = plt.figure()")
+nrnpython("plt.scatter(Arr_X[:,0],Arr_Peak_PSP[:,0],color='red')")
+nrnpython("plt.plot(Arr_X[:,0],Arr_Peak_PSP[:,0],color='red')")
+nrnpython("plt.scatter(Arr_X[:,15],Arr_Peak_PSP[:,15],color='blue')")
+nrnpython("plt.plot(Arr_X[:,15],Arr_Peak_PSP[:,15],color='blue')")
+nrnpython("plt.scatter(Arr_X[:,3],Arr_Peak_PSP[:,3],color='black')")
+nrnpython("plt.plot(Arr_X[:,3],Arr_Peak_PSP[:,3],color='black')")
+nrnpython("plt.xlabel('# Glu synapses')")
+nrnpython("plt.ylabel('Peak Vm (mV)')")
+nrnpython("plt.ylim(-85,0)")
+
+nrnpython("plt.show()")
