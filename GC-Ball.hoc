@@ -95,7 +95,7 @@ AIS connect axon(0), 1
 //*************************************************************
 //         		Geometry
 //**************************************************************
-// mature cell: dendrite 250 µm, diam 1.5:0.7, AIS nseg= 11, axon nseg = 101
+// mature cell: dendrite 250 Âµm, diam 1.5:0.7, AIS nseg= 11, axon nseg = 101
 // Cap = 100 ms/ 4GOhm = 25 pF => 2500 um^2 => ;  L = 79.61 um
 // Cm = 1 uF/cm^2 = 0.01 uF/mm^2 = 0.01 pF/um^2
 // lenght Cylinder = Area / 2PI r 
